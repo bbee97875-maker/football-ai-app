@@ -1,53 +1,17 @@
 import streamlit as st
 import joblib
 import numpy as np
+import requests
+import matplotlib.pyplot as plt
 
 # =========================
 # PAGE CONFIG
 # =========================
 st.set_page_config(
-    page_title="Football AI Pro",
+    page_title="Football AI Pro Max",
     page_icon="⚽",
     layout="wide"
 )
-
-# =========================
-# STYLE (MODERN DARK UI)
-# =========================
-st.markdown("""
-<style>
-.stApp {
-    background: linear-gradient(to right, #0f172a, #111827);
-    color: white;
-}
-
-.title {
-    font-size: 40px;
-    font-weight: bold;
-    color: #00ff99;
-    text-align: center;
-}
-
-.card {
-    background: #1f2937;
-    padding: 20px;
-    border-radius: 20px;
-    box-shadow: 0px 0px 15px rgba(0,255,153,0.2);
-}
-
-.result-win {
-    color: #00ff99;
-    font-size: 28px;
-    font-weight: bold;
-}
-
-.result-lose {
-    color: #ff4d4d;
-    font-size: 28px;
-    font-weight: bold;
-}
-</style>
-""", unsafe_allow_html=True)
 
 # =========================
 # LOAD MODEL
@@ -57,12 +21,12 @@ model = joblib.load("football_model.pkl")
 # =========================
 # TITLE
 # =========================
-st.markdown("<div class='title'>⚽ Football AI Predictor Pro</div>", unsafe_allow_html=True)
+st.title("⚽ Football AI Pro Max Dashboard")
 
-st.write("")
+st.write("AI Prediction + Stats + Live Ready System")
 
 # =========================
-# INPUT UI
+# TEAM INPUT
 # =========================
 col1, col2 = st.columns(2)
 
@@ -72,33 +36,75 @@ with col1:
 with col2:
     away = st.slider("✈️ Away Strength", 0, 100, 70)
 
-st.write("")
+# =========================
+# OPTIONAL API SECTION (READY FOR REAL DATA)
+# =========================
+st.subheader("🔴 Live Data (Optional API)")
+
+api_url = st.text_input("Enter Football API URL (optional)")
+
+live_data = None
+
+if api_url:
+    try:
+        live_data = requests.get(api_url).json()
+        st.success("Live data loaded!")
+        st.json(live_data)
+    except:
+        st.warning("API failed or invalid URL")
 
 # =========================
-# PREDICT
+# PREDICTION
 # =========================
 if st.button("🚀 Predict Match"):
 
     X = np.array([[home, away]])
-
     pred = model.predict(X)
     prob = model.predict_proba(X)[0]
 
-    home_prob = round(prob[1] * 100, 2)
-    away_prob = round(prob[0] * 100, 2)
+    home_prob = float(prob[1] * 100)
+    away_prob = float(prob[0] * 100)
 
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-
-    st.subheader("📊 Prediction Result")
+    st.subheader("📊 AI Prediction Result")
 
     if pred[0] == 1:
-        st.markdown("<div class='result-win'>🏆 Home Team Wins</div>", unsafe_allow_html=True)
+        st.success("🏆 Home Team Likely WIN")
     else:
-        st.markdown("<div class='result-lose'>🏆 Away Team Wins</div>", unsafe_allow_html=True)
+        st.error("🏆 Away Team Likely WIN")
 
-    st.write(f"Home Win Probability: {home_prob}%")
-    st.write(f"Away Win Probability: {away_prob}%")
+    st.write("Home Win %:", round(home_prob, 2))
+    st.write("Away Win %:", round(away_prob, 2))
 
     st.progress(int(home_prob))
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    # =========================
+    # CHART SECTION
+    # =========================
+    st.subheader("📈 Probability Chart")
+
+    fig, ax = plt.subplots()
+
+    teams = ["Home", "Away"]
+    values = [home_prob, away_prob]
+
+    ax.bar(teams, values)
+
+    st.pyplot(fig)
+
+    # =========================
+    # SIMPLE AI ANALYSIS
+    # =========================
+    st.subheader("🧠 AI Analysis")
+
+    if home > away:
+        st.info("Home team has stronger squad rating and advantage.")
+    elif away > home:
+        st.info("Away team shows better strength metrics.")
+    else:
+        st.info("Teams are evenly matched, draw possible.")
+
+# =========================
+# FOOTER
+# =========================
+st.write("---")
+st.caption("Football AI Pro Max | Streamlit Powered")
